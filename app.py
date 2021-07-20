@@ -70,29 +70,18 @@ def deleteFile(filename):
 def export_pdf():
     body = request.json
     template_name = body['templateName']
+    print(template_name)
     context = body['context']
     id = uuid.uuid4()
-    print(template_name)
-    print(context)
+    filename = template_name.split(".")[0]
 
     tpl = DocxTemplate(f"template/{template_name}")
     tpl.render(context)
 
-    tpl.save(f"output/{id}.docx")
-    convert(f"output/{id}.docx", f"pdf/{id}.pdf")
+    tpl.save(f"output/{filename}.docx")
+    convert(f"output/{filename}.docx", f"pdf/{filename}.pdf")
 
-    @after_this_request
-    def remove_file(response):
-        try:
-            os.remove(f"./output/{id}.docx")
-            os.remove(f"./output/{id}.pdf")
-        except Exception as error:
-            app.logger.error(
-                "Error removing or closing downloaded file handle", error)
-
-        return response
-
-    return send_file(f"./pdf/{id}.docx", mimetype="application/application/docx")
+    return send_file(f"pdf/{filename}.pdf", mimetype="application/application/pdf")
 
 
 if __name__ == '__main__':
