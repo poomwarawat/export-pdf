@@ -8,9 +8,35 @@ import os
 from os import listdir
 from os.path import isfile, join
 import json
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+
 CORS(app)
+
+UPLOAD_FOLDER = "./template"
+ALLOWED_EXTENSIONS = {'docx'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+@app.route('/pdf/template', methods=['POST'])
+def upload_file():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return "No file to upload"
+        file = request.files['file']
+        if file.filename == '':
+            return "Filename is empty"
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return "Success"
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route('/pdf/template', methods=['GET'])
@@ -32,6 +58,12 @@ def downloadFile(filename):
     # For windows you need to use drive name [ex: F:/Example.pdf]
     path = f"./template/{filename}"
     return send_file(path, as_attachment=True)
+
+
+@app.route('/pdf/template/<path:filename>', methods=['DELETE'])
+def deleteFile(filename):
+    os.remove(f"template/{filename}")
+    return "Success"
 
 
 @app.route('/pdf/export', methods=['POST'])
