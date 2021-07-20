@@ -9,15 +9,57 @@ from os import listdir
 from os.path import isfile, join
 import json
 from werkzeug.utils import secure_filename
+from fontTools.ttLib import TTFont
 
 app = Flask(__name__)
 
 CORS(app)
 
 UPLOAD_FOLDER = "./template"
-ALLOWED_EXTENSIONS = {'docx'}
+UPLOAD_FONT_FOLDER = "./fonts"
+ALLOWED_EXTENSIONS = {'docx', 'ttf'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FONT_FOLDER'] = UPLOAD_FONT_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/font', methods=['GET'])
+def getAllfont():
+    tmp = os.popen("fc-list").read()
+    font_list = tmp.splitlines()
+
+    font = {
+        'font': font_list,
+        'font_size': len(font_list)
+    }
+
+    return Response(json.dumps(font),  mimetype='application/json')
+
+
+def install_font(filename):
+    font = TTFont(f"fonts/{filename}")
+    font.save(f"../../../Library/Fonts/{filename}")
+
+
+@app.route('/font', methods=['POST'])
+def upload_font():
+    print('-> start upload font')
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return "No file to upload"
+        file = request.files['file']
+        if file.filename == '':
+            return "Filename is empty"
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FONT_FOLDER'], filename))
+            install_font(filename)
+            return "Success"
 
 
 @app.route('/pdf/template', methods=['POST'])
@@ -34,11 +76,6 @@ def upload_file():
             return "Success"
 
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
 @app.route('/pdf/template', methods=['GET'])
 def get_templates():
     relevant_path = "./template"
@@ -49,7 +86,6 @@ def get_templates():
         "file": file_names
     }
 
-    print(file)
     return Response(json.dumps(file),  mimetype='application/json')
 
 
@@ -86,17 +122,3 @@ def export_pdf():
 
 if __name__ == '__main__':
     app.run()
-
-# context = {
-#     'projectName': 'โครงการจัดซื้ออุปกรณ์สร้างโรงงาน',
-#     'contractNumber': '86543567',
-#     'leaderName': 'มายวัน',
-#     'workDetails': 'จัดซ์้อวัสดุและอุปกรณ์และก่อสร้างตั้งแต่ 18 มกราคม - 30 ธันวาคม',
-#     'tbl_contents': [
-#         {'name': 'วรวัชร', 'lastname': 'ไล้เลิศ'},
-#         {'name': 'พิชัย', 'lastname': 'มาแว้ว', },
-#         {'name': 'โทริโก้', 'lastname': 'นั้นโก้จริงๆ'},
-#         {'name': 'ยูด้า', 'lastname': 'ดายู้'},
-#     ],
-#     'currentDate': now.strftime("%d/%m/%Y, %H:%M:%S")
-# }
