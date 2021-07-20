@@ -1,5 +1,5 @@
 from docxtpl import DocxTemplate
-from docx2pdf import convert
+# from docx2pdf import convert
 
 from flask import Flask, send_file, request, after_this_request, Response, redirect, render_template
 from flask_cors import CORS
@@ -115,9 +115,9 @@ def export_pdf():
     tpl.render(context)
 
     tpl.save(f"output/{filename}.docx")
-    convert(f"output/{filename}.docx", f"pdf/{filename}.pdf")
+    # convert(f"output/{filename}.docx", f"pdf/{filename}.pdf")
 
-    return send_file(f"pdf/{filename}.pdf", mimetype="application/application/pdf")
+    return send_file(f"output/{filename}.docx", mimetype="application/application/docx")
 
 
 if __name__ == '__main__':
