@@ -43,7 +43,7 @@ def getAllfont():
 
 def install_font(filename):
     font = TTFont(f"fonts/{filename}")
-    font.save(f"../../../Library/Fonts/{filename}")
+    font.save(f"../../../usr/share/fonts/truetype/{filename}")
 
 
 @app.route('/font', methods=['POST'])
